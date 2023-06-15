@@ -1,4 +1,5 @@
-﻿using Smartwyre.DeveloperTest.Data;
+﻿using System;
+using Smartwyre.DeveloperTest.Data;
 using Smartwyre.DeveloperTest.Types;
 
 namespace Smartwyre.DeveloperTest.Services;
@@ -20,71 +21,13 @@ public class RebateService : IRebateService
         switch (rebate.Incentive)
         {
             case IncentiveType.FixedCashAmount:
-                if (rebate == null)
-                {
-                    result.Success = false;
-                }
-                else if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.FixedCashAmount))
-                {
-                    result.Success = false;
-                }
-                else if (rebate.Amount == 0)
-                {
-                    result.Success = false;
-                }
-                else
-                {
-                    rebateAmount = rebate.Amount;
-                    result.Success = true;
-                }
+                result.Success = AssessFixedCashAmount(rebate, product, ref rebateAmount);
                 break;
-
             case IncentiveType.FixedRateRebate:
-                if (rebate == null)
-                {
-                    result.Success = false;
-                }
-                else if (product == null)
-                {
-                    result.Success = false;
-                }
-                else if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.FixedRateRebate))
-                {
-                    result.Success = false;
-                }
-                else if (rebate.Percentage == 0 || product.Price == 0 || request.Volume == 0)
-                {
-                    result.Success = false;
-                }
-                else
-                {
-                    rebateAmount += product.Price * rebate.Percentage * request.Volume;
-                    result.Success = true;
-                }
+                result.Success = AssessFixedRateRebate(rebate, product, request, ref rebateAmount);
                 break;
-
             case IncentiveType.AmountPerUom:
-                if (rebate == null)
-                {
-                    result.Success = false;
-                }
-                else if (product == null)
-                {
-                    result.Success = false;
-                }
-                else if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.AmountPerUom))
-                {
-                    result.Success = false;
-                }
-                else if (rebate.Amount == 0 || request.Volume == 0)
-                {
-                    result.Success = false;
-                }
-                else
-                {
-                    rebateAmount += rebate.Amount * request.Volume;
-                    result.Success = true;
-                }
+                result.Success = AssessAmountPerUom(rebate, product, request, ref rebateAmount);
                 break;
         }
 
@@ -96,4 +39,84 @@ public class RebateService : IRebateService
 
         return result;
     }
+
+    public bool AssessFixedCashAmount(Rebate rebate, Product product, ref Decimal rebateAmount)
+    {
+        bool result = false;
+        if (rebate == null)
+        {
+            result = false;
+        }
+        else if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.FixedCashAmount))
+        {
+            result = false;
+        }
+        else if (rebate.Amount == 0)
+        {
+            result = false;
+        }
+        else
+        {
+            rebateAmount = rebate.Amount;
+            result = true;
+        }
+        return result;
+    }
+
+    public bool AssessFixedRateRebate(Rebate rebate, Product product, CalculateRebateRequest request, ref Decimal rebateAmount)
+    {
+        bool result = false;
+        if (rebate == null)
+        {
+            result = false;
+        }
+        else if (product == null)
+        {
+            result = false;
+        }
+        else if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.FixedRateRebate))
+        {
+            result = false;
+        }
+        else if (rebate.Percentage == 0 || product.Price == 0 || request.Volume == 0)
+        {
+            result = false;
+        }
+        else
+        {
+            rebateAmount += product.Price * rebate.Percentage * request.Volume;
+            result = true;
+        }
+        return result;
+    }
+
+    public bool AssessAmountPerUom(Rebate rebate, Product product, CalculateRebateRequest request, ref Decimal rebateAmount)
+    {
+        bool result = false;
+        if (rebate == null)
+        {
+            result = false;
+        }
+        else if (product == null)
+        {
+            result = false;
+        }
+        else if (!product.SupportedIncentives.HasFlag(SupportedIncentiveType.AmountPerUom))
+        {
+            result = false;
+        }
+        else if (rebate.Amount == 0 || request.Volume == 0)
+        {
+            result = false;
+        }
+        else
+        {
+            rebateAmount += rebate.Amount * request.Volume;
+            result = true;
+        }
+        
+        return result;
+    }
+    
+    
 }
